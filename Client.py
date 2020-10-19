@@ -1,65 +1,61 @@
 import socket
 
-#HEADERSIZE = 10
-
-socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM ) #Socket family type (AF_INET: IPV4), actual type of socket (SOCK_STREAM: TCP)
-socket_client.connect((socket.gethostname(),1237))
-print('Input commands: ')
-
-while True:
-    command_to_send=input()
-    socket_client.send(bytes(command_to_send,'utf-8'))
-
-    if (command_to_send=="salir"):
-        break
-
-print("The client has been finished")
-socket_client.close()
-
-
-'''
 def main():
+    socketConnection()
+
+def socketConnection():
+
+    #Creating a Socket
+    socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM ) #Socket family type (AF_INET: IPV4), actual type of socket (SOCK_STREAM: TCP)
+    socket_client.connect((socket.gethostname(),1237))
     print('Input commands: ')
-    command_to_send=input()
 
-    while command_to_send!='QUIT':
-        if (command_to_send=='DATA'):
-            data_to_send=input('Input data to send: ')
-            command_and_data_to_send = command_to_send + ' ' + data_to_send
-            s.send(bytes(command_and_data_to_send).encode())
-            s.recv(16)
-            print('Data')
+    #Sending data
+    while True:
+        command_to_send=input()
+        if (command_to_send=="create"):
+            print('Input the bucket name that you want to create: ')
+            command_bucket_name=input()
+            command_complete=command_to_send+" "+command_bucket_name
+            socket_client.send(bytes(command_complete,'utf-8'))
+            dataFromServer = socket_client.recv(1024)
+            print(dataFromServer)
+        elif (command_to_send=="delete"):
+            print('Input the bucket name that you want to delete: ')
+            command_bucket_name=input()
+            command_complete=command_to_send+" "+command_bucket_name
+            socket_client.send(bytes(command_complete,'utf-8'))
+        elif (command_to_send=="listB"):
+            socket_client.send(bytes(command_to_send,'utf-8'))
             
-        else:
-            print('Nada')
-
-    if __name__ == "__main__":
-        main()
-
-    
-
-        
-
-        full_msg = b''
-        new_msg=True
-        while True:
-            msg = s.recv(16) #Recieve a chunks of data with a size of 1024 bytes
-            if new_msg:
-                print(f"new message length: {msg[:HEADERSIZE]}")
-                msglen=int(msg[:HEADERSIZE])
-                new_msg=False
-
-            full_msg+= msg
-
-            if len(full_msg)-HEADERSIZE == msglen:
-                print("full msg recvd")
-                print(full_msg[HEADERSIZE:])
+        elif (command_to_send=="listF"):
+            print('Input the bucket name that you want to list files : ')
+            command_bucket_name=input()
+            command_complete=command_to_send+" "+command_bucket_name
+            socket_client.send(bytes(command_to_send,'utf-8'))
                 
-                d=pickle.loads(full_msg[HEADERSIZE:])
-                print(d)
+    print("The client has been finished")
+    socket_client.close()   
 
-                new_msg=True
-                full_msg=b''
+if __name__ == "__main__":
+    main()
 
-        print(full_msg)
-        '''
+    '''elif (command_to_send=="upload"):
+            print('Input the bucket name that you want to add files: ')
+            command_bucket_name=input()
+            print('Input the name file: ')
+            command_name=input()
+            print('Input the type of file: ')
+            command_type=input()
+            command_complete=command_to_send+" "+command_bucket_name+" "+command_name+" "+command_type
+            dir="C:/Users/camil/Desktop/"+command_name+"."+command_type
+            f = open(dir,'rb')
+            print("Sending...")
+            l=f.read(1024)
+            while (l):
+                print ("Sending...")            
+                socket_client.send(l)
+                l=f.read(1024)
+            print ("Done Sending")
+            socket_client.shutdown(socket.SHUT_WR)
+            socket_client.close()'''
