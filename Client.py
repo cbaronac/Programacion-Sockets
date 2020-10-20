@@ -27,35 +27,50 @@ def socketConnection():
             socket_client.send(bytes(command_complete,'utf-8'))
         elif (command_to_send=="listB"):
             socket_client.send(bytes(command_to_send,'utf-8'))
-            
-        elif (command_to_send=="listF"):
-            print('Input the bucket name that you want to list files : ')
-            command_bucket_name=input()
-            command_complete=command_to_send+" "+command_bucket_name
-            socket_client.send(bytes(command_to_send,'utf-8'))
-                
-    print("The client has been finished")
-    socket_client.close()   
-
-if __name__ == "__main__":
-    main()
-
-    '''elif (command_to_send=="upload"):
+        elif (command_to_send=="upload"):
             print('Input the bucket name that you want to add files: ')
             command_bucket_name=input()
             print('Input the name file: ')
             command_name=input()
-            print('Input the type of file: ')
-            command_type=input()
-            command_complete=command_to_send+" "+command_bucket_name+" "+command_name+" "+command_type
-            dir="C:/Users/camil/Desktop/"+command_name+"."+command_type
-            f = open(dir,'rb')
-            print("Sending...")
-            l=f.read(1024)
-            while (l):
-                print ("Sending...")            
-                socket_client.send(l)
-                l=f.read(1024)
-            print ("Done Sending")
-            socket_client.shutdown(socket.SHUT_WR)
-            socket_client.close()'''
+            command_complete=command_to_send+" "+command_bucket_name+" "+command_name
+            socket_client.send(bytes(command_complete,'utf-8'))
+            upload(command_name,socket_client)
+        elif (command_to_send=="listF"):
+            print('Input the bucket name that you want to list files : ')
+            command_bucket_name=input()
+            command_complete=command_to_send+" "+command_bucket_name
+            socket_client.send(bytes(command_complete,'utf-8'))
+                
+    print("The client has been finished")
+    socket_client.close()   
+
+def upload(nameFile, socket_client):
+    while True:
+        dir="C:/Users/camil/Desktop/"+nameFile
+        f = open(dir,"rb")
+        content = f.read(1024)
+        
+        while content:
+            # Send content
+            socket_client.send(content)
+            content = f.read(1024)
+        break
+
+    try:
+        print("entro try")
+        socket_client.send(chr(1))
+        print(socket_client.send(chr(1)))
+    except TypeError:
+        print("except")
+        # Compatibilidad con Python 3.  
+        socket_client.send(bytes(chr(1), "utf-8"))                
+            
+        # Cerrar conexión y archivo.
+    f.close()
+    print("El archivo ha sido enviado correctamente.")
+
+
+if __name__ == "__main__":
+    main()
+
+ 
