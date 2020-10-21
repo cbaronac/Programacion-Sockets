@@ -18,7 +18,6 @@ def threaded(socket_client):
     while True: 
         # data received from client 
         data = socket_client.recv(1024) 
-        print(data)
         if not data: 
             print("The server has been finished")  
             # lock released on exit 
@@ -128,7 +127,6 @@ def uploadFiles(nameFile,socket_client,file,dire):
         try:
             # Recibir datos del cliente.
             input_data = socket_client.recv(1024)
-            print(input_data)
             if input_data:
                 # Compatibilidad con Python 3.
                 if isinstance(input_data, bytes):

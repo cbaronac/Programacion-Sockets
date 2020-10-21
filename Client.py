@@ -2,14 +2,28 @@ import socket
 from pathlib import Path
 import os
 
+
+
 def main():
     socketConnection()
 
+def menu():
+    print('Option |  Name Option', )
+    print("  1    |  Create bucket")
+    print("  2    |  Delete bucket")
+    print("  3    |  List bucket")
+    print("  4    |  Upload bucket")
+    print("  5    |  List file")
+    print("  6    |  Delete files")
+    print("  7    |  Download bucket")
+    print(" ")
+    
 def socketConnection():
 
     #Creating a Socket
     socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM ) #Socket family type (AF_INET: IPV4), actual type of socket (SOCK_STREAM: TCP)
     socket_client.connect((socket.gethostname(),1237))
+    menu()
     print('Input commands: ')
     command_to_send=input()
     menuOptions(command_to_send,socket_client)
@@ -19,6 +33,7 @@ def socketConnection():
     while True:
         
         while(ans=='y') :
+            menu()
             print('Input commands: ')
             command_to_send=input()
             menuOptions(command_to_send,socket_client)
