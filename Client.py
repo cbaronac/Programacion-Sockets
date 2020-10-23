@@ -90,21 +90,22 @@ def upload(command_to_send, socket_client):
     print('Input the path where is the file:')
     path=input()
     command_complete=command_to_send+" "+command_bucket_name+" "+command_name+" "+path
-    socket_client.send(bytes(command_complete,'utf-8'))            
+    socket_client.send(bytes(command_complete,'utf-8'))  
+    sizefile = os.path.getsize(path+"/"+command_name)    
     while True:
         dir=path+"/"+command_name
         f = open(dir,"rb")
-        content = f.read(1024)
+        content = f.read(sizefile)
         
         while content:
             # Send content
             socket_client.send(content)
-            content = f.read(1024)
+            content = f.read(sizefile)
         break
 
     try:
         socket_client.send(chr(1))
-        print(socket_client.send(chr(1)))
+        
 
     except TypeError:
         
@@ -141,11 +142,12 @@ def downloadFiles(command_to_send,socket_client):
     socket_client.send(bytes(command_complete,'utf-8'))
     dire="./Downloads/"+command_file_name
     file= open(dire,"wb")
+    dir="./Buckets/"+command_bucket_name+"/"+command_file_name
+    sizefile = os.path.getsize(dir)
     while True:
         try:
             # Recibir datos del cliente.
-            input_data = socket_client.recv(1024)
-            print(input_data)
+            input_data = socket_client.recv(sizefile)
             if input_data:
                 # Compatibilidad con Python 3.
                 if isinstance(input_data, bytes):
@@ -160,10 +162,12 @@ def downloadFiles(command_to_send,socket_client):
                     else:
                         file.write(input_data)
                         print("The file has been received successfully.")
+                        confirmationServer()
+                        
             break
 
         except:
-            print("Error de lectura.")
+           
             file.close()
             break
 

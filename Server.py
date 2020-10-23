@@ -28,7 +28,7 @@ def threaded(socket_client):
   
         # send back reversed string to client 
         
-        string_received=data.decode("utf-8")
+        string_received=data.decode("latin-1")
         bucket_name=string_received.split(" ")
         
 
@@ -46,12 +46,14 @@ def threaded(socket_client):
         elif(bucket_name[0]=="4"):
             name=bucket_name[1] #Name of bucket
             nameF=bucket_name[2] #File
-            dir="./Buckets/"+name+"/"+nameF
+            path=bucket_name[3]
+            dir="./Buckets/"+name+"/"+nameF   
+            sizefile = os.path.getsize(path+"/"+nameF)
             f= open(dir,"wb")
-            uploadFiles(nameF,socket_client,f,dir)
+            uploadFiles(nameF,socket_client,f,dir,sizefile)
 
         elif(bucket_name[0]=="5"):
-            dir=bucket_name[2]
+            dir=bucket_name[1]
             listFiles(socket_client,dir)
 
         elif(bucket_name[0]=="6"):
@@ -122,11 +124,12 @@ def listBuckets(socket_client):
     print("The buckets has been listed on server successfully.") 
     socket_client.send("The buckets has been listed!:".encode())
 
-def uploadFiles(nameFile,socket_client,file,dire):
+def uploadFiles(nameFile,socket_client,file,dire,sizefile):
+
     while True:
         try:
             # Recibir datos del cliente.
-            input_data = socket_client.recv(1024)
+            input_data = socket_client.recv(sizefile)
             if input_data:
                 # Compatibilidad con Python 3.
                 if isinstance(input_data, bytes):
@@ -141,6 +144,7 @@ def uploadFiles(nameFile,socket_client,file,dire):
                     else:
                         file.write(input_data)
                         print("The file has been received successfully.")
+                        socket_client.send("The file has been received successfully!".encode())
             break
 
         except:
@@ -164,33 +168,34 @@ def deleteFiles(socket_client,dir):
     socket_client.send("The file has been deleted from bucket".encode())
 
 def downloadFiles(nameBucket,nameFile,socket_client):
+    dir="./Buckets/"+nameBucket+"/"+nameFile
+    sizefile = os.path.getsize(dir)
     if not os.path.isdir('./Downloads'):
         os.mkdir("./Downloads")
     
     while True:
-        dir="./Buckets/"+nameBucket+"/"+nameFile
+        
         f = open(dir,"rb")
-        content = f.read(1024)
+        content = f.read(sizefile)
         
         while content:
             # Send content
             socket_client.send(content)
-            content = f.read(1024)
+            content = f.read(sizefile)
         break
 
     try:
         socket_client.send(chr(1))
-        print(socket_client.send(chr(1)))
+       
 
     except TypeError:
-        
-        # Compatibilidad con Python 3.  
+    
         socket_client.send(bytes(chr(1), "utf-8"))                
             
-        # Cerrar conexión y archivo.
+        
     f.close()
     print("The file has been sent successfully.")
-  
+    
 
 
 if __name__ == "__main__":
