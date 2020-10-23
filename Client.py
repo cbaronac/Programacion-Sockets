@@ -12,10 +12,10 @@ def menu():
     print("  1    |  Create bucket")
     print("  2    |  Delete bucket")
     print("  3    |  List bucket")
-    print("  4    |  Upload bucket")
-    print("  5    |  List file")
+    print("  4    |  Upload files")
+    print("  5    |  List files")
     print("  6    |  Delete files")
-    print("  7    |  Download bucket")
+    print("  7    |  Download files")
     print(" ")
     
 def socketConnection():
@@ -64,9 +64,9 @@ def menuOptions(command_to_send,socket_client):
         
 
 def createBucket(command_to_send, socket_client):
-    print('Input the bucket name that you want to create: ')
-    command_bucket_name=input()
-    command_complete=command_to_send+" "+command_bucket_name
+    print("Input the bucket name that you want to create: ")
+    nameBucket=input()
+    command_complete=command_to_send+" "+nameBucket
     socket_client.send(bytes(command_complete,'utf-8'))
     confirmationServer(socket_client)
 
@@ -126,10 +126,10 @@ def listFiles(command_to_send, socket_client):
 
 def deleteFiles(command_to_send,socket_client):
     print('Input the path where is the file that you want to delete: ')
-    path=input()
+    bucket_name=input()
     print('Input the file name that you want to delete: ')
     command_file_name=input()
-    command_complete=command_to_send+" "+path+" "+command_file_name
+    command_complete=command_to_send+" "+bucket_name+" "+command_file_name
     socket_client.send(bytes(command_complete,'utf-8'))
     confirmationServer(socket_client)
 
@@ -140,6 +140,14 @@ def downloadFiles(command_to_send,socket_client):
     command_file_name=input()
     command_complete=command_to_send+" "+command_bucket_name+" "+command_file_name
     socket_client.send(bytes(command_complete,'utf-8'))
+    dir="./Downloads/"+command_file_name
+    f = Path(dir)
+    if(f.exists()):
+        print("The file alredy exists!")
+    else:
+        downloadIfNotExists(command_bucket_name,command_file_name,socket_client)
+
+def downloadIfNotExists(command_bucket_name,command_file_name, socket_client):
     dire="./Downloads/"+command_file_name
     file= open(dire,"wb")
     dir="./Buckets/"+command_bucket_name+"/"+command_file_name
@@ -162,8 +170,7 @@ def downloadFiles(command_to_send,socket_client):
                     else:
                         file.write(input_data)
                         print("The file has been received successfully.")
-                        confirmationServer()
-                        
+                        confirmationServer()                
             break
 
         except:

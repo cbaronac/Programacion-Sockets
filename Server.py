@@ -48,26 +48,37 @@ def threaded(socket_client):
             nameF=bucket_name[2] #File
             path=bucket_name[3]
             dir="./Buckets/"+name+"/"+nameF   
-            sizefile = os.path.getsize(path+"/"+nameF)
-            f= open(dir,"wb")
-            uploadFiles(nameF,socket_client,f,dir,sizefile)
+            f = Path(dir)
+            if(f.exists()):
+                print("The file alredy exists!")
+                socket_client.send("The file alredy exists!".encode())
+            else:
+                sizefile = os.path.getsize(path+"/"+nameF)
+                f= open(dir,"wb")
+                uploadFiles(nameF,socket_client,f,dir,sizefile)
 
         elif(bucket_name[0]=="5"):
             dir=bucket_name[1]
             listFiles(socket_client,dir)
 
         elif(bucket_name[0]=="6"):
-            path=bucket_name[1]
+            nameBucket=bucket_name[1]
             nameF=bucket_name[2]
-            dir=path+"/"+nameF
+            dir="./Buckets/"+nameBucket+"/"+nameF
             deleteFiles(socket_client,dir)
 
         elif (bucket_name[0]=="7"):
+            if not os.path.isdir('./Downloads'):
+                os.mkdir("./Downloads")
             nameBucket=bucket_name[1]
             nameFile=bucket_name[2]
-
-            downloadFiles(nameBucket,nameFile,socket_client)
-        #socket_client.send("The file has been upload into: "+name+" bucket".encode())
+            dir="./Downloads/"+nameFile
+            f = Path(dir)
+            if(f.exists()):
+                print("The file alredy exists!")
+            else:
+                downloadFiles(nameBucket,nameFile,socket_client)
+        
     
     # connection closed 
     socket_client.send(data) 
@@ -98,6 +109,7 @@ def createBucket(nameBucket,socket_client):
         os.mkdir("./Buckets")
 
     dir="./Buckets/"+nameBucket
+
     try:
         os.mkdir(dir)
     except OSError:
@@ -112,9 +124,10 @@ def deleteBucket(nameBucket,socket_client):
         shutil.rmtree(dir)
     except OSError:
         print("The name of this directory isn't available")
+        socket_client.send("The bucket doesn't exists!".encode())
     else:
         print("The directory has been deleted successfully.")
-    socket_client.send("The bucket has been deleted!".encode())
+        socket_client.send("The bucket has been deleted!".encode())
 
 def listBuckets(socket_client):
     dir="./Buckets"
@@ -125,7 +138,7 @@ def listBuckets(socket_client):
     socket_client.send("The buckets has been listed!:".encode())
 
 def uploadFiles(nameFile,socket_client,file,dire,sizefile):
-
+    
     while True:
         try:
             # Recibir datos del cliente.
@@ -134,18 +147,15 @@ def uploadFiles(nameFile,socket_client,file,dire,sizefile):
                 # Compatibilidad con Python 3.
                 if isinstance(input_data, bytes):
                     end = input_data[0] == 1
-                    
+                        
                 else:
                     end = input_data == chr(1)
-                   
+
                 if not end:
-                    if os.path.isdir(dire):
-                        print("The file exists!")
-                    else:
-                        file.write(input_data)
-                        print("The file has been received successfully.")
-                        socket_client.send("The file has been received successfully!".encode())
-            break
+                    file.write(input_data)
+                    print("The file has been received successfully.")
+                    socket_client.send("The file has been received successfully!".encode())
+                break
 
         except:
 
@@ -163,16 +173,19 @@ def listFiles(socket_client,dir):
     socket_client.send("The files has been listed!:".encode())
 
 def deleteFiles(socket_client,dir):
-    remove(dir)
-    print("The file has been deleted successfully.") 
-    socket_client.send("The file has been deleted from bucket".encode())
+    f = Path(dir)
+    if not (f.exists()):
+        print("The file doesn't exists!")
+        socket_client.send("The file doesn't exists!".encode())
+    else:
+        remove(dir)
+        print("The file has been deleted successfully.") 
+        socket_client.send("The file has been deleted from bucket".encode())
 
 def downloadFiles(nameBucket,nameFile,socket_client):
     dir="./Buckets/"+nameBucket+"/"+nameFile
     sizefile = os.path.getsize(dir)
-    if not os.path.isdir('./Downloads'):
-        os.mkdir("./Downloads")
-    
+
     while True:
         
         f = open(dir,"rb")
@@ -182,6 +195,7 @@ def downloadFiles(nameBucket,nameFile,socket_client):
             # Send content
             socket_client.send(content)
             content = f.read(sizefile)
+            socket_client.send("The file has been sent successfully!".encode())
         break
 
     try:
@@ -194,7 +208,6 @@ def downloadFiles(nameBucket,nameFile,socket_client):
             
         
     f.close()
-    print("The file has been sent successfully.")
     
 
 
