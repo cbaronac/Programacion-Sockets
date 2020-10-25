@@ -38,7 +38,10 @@ def threaded(socket_client):
 
         elif (bucket_name[0]=="2"):
             name=bucket_name[1]
-            deleteBucket(name,socket_client)
+            if not os.path.isdir('./Buckets/'+name):
+                socket_client.send("The bucket doesn't exists!".encode())
+            else:
+                deleteBucket(name,socket_client)
             
         elif(bucket_name[0]=="3"):             
             listBuckets(socket_client)
@@ -49,17 +52,18 @@ def threaded(socket_client):
             path=bucket_name[3]
             dir="./Buckets/"+name+"/"+nameF   
             f = Path(dir)
+            origin=path+"/"+nameF
             if(f.exists()):
-                print("The file alredy exists!")
-                socket_client.send("The file alredy exists!".encode())
+                    print("The file alredy exists!")
+                    socket_client.send("The file alredy exists!".encode())
             else:
-                sizefile = os.path.getsize(path+"/"+nameF)
+                sizefile = os.path.getsize(origin)
                 f= open(dir,"wb")
-                uploadFiles(nameF,socket_client,f,dir,sizefile)
+                uploadFiles(socket_client,f,sizefile)
 
         elif(bucket_name[0]=="5"):
-            dir=bucket_name[1]
-            listFiles(socket_client,dir)
+            bucketName=bucket_name[1]
+            listFiles(socket_client,bucketName)
 
         elif(bucket_name[0]=="6"):
             nameBucket=bucket_name[1]
@@ -91,15 +95,14 @@ def connectionSocket():
 
     socket_client=socket.socket()
 
-    socket_server.bind((socket.gethostname(),1237))  #Enlazar la tupla IP y Puertos
+    socket_server.bind((socket.gethostname(),1233))  #Enlazar la tupla IP y Puertos
 
-    socket_server.listen(5)  #Preparing the server for incoming connections and this server will prepare and leave a queue of 5 so it's under some sort
+    socket_server.listen(1)  #Preparing the server for incoming connections and this server will prepare and leave a queue of 5 so it's under some sort
     print("Listening...")
    
     #Accepting a client
     while True:
         socket_client, address = socket_server.accept()  #Address is where they coming from IP address
-        print(f"Connection from {address} has been established!")
         print_lock.acquire()
         print('Connected to :', address[0], ':', address[1])
         start_new_thread(threaded, (socket_client,)) 
@@ -121,7 +124,7 @@ def createBucket(nameBucket,socket_client):
 def deleteBucket(nameBucket,socket_client):
     dir="./Buckets/"+nameBucket
     try:
-        shutil.rmtree(dir)
+        shutil.rmtree(dir) #Borrado en cascada archivos -> Carpeta
     except OSError:
         print("The name of this directory isn't available")
         socket_client.send("The bucket doesn't exists!".encode())
@@ -137,7 +140,7 @@ def listBuckets(socket_client):
     print("The buckets has been listed on server successfully.") 
     socket_client.send("The buckets has been listed!:".encode())
 
-def uploadFiles(nameFile,socket_client,file,dire,sizefile):
+def uploadFiles(socket_client,file,sizefile):
     
     while True:
         try:
@@ -145,11 +148,12 @@ def uploadFiles(nameFile,socket_client,file,dire,sizefile):
             input_data = socket_client.recv(sizefile)
             if input_data:
                 # Compatibilidad con Python 3.
-                if isinstance(input_data, bytes):
+                if isinstance(input_data, bytes):  #Verifica que input_data sean bytes
+                    
                     end = input_data[0] == 1
                         
                 else:
-                    end = input_data == chr(1)
+                    end = input_data == chr(1)  #The chr() function returns the character that represents the specified unicode
 
                 if not end:
                     file.write(input_data)
@@ -165,10 +169,11 @@ def uploadFiles(nameFile,socket_client,file,dire,sizefile):
 
     file.close() 
 
-def listFiles(socket_client,dir):
-    content = pathlib.Path(dir)
-    for fichero in content.iterdir():
-        print(fichero.name)
+def listFiles(socket_client,nameBucket):
+    dir="./Buckets/"+nameBucket
+    content = os.listdir(dir)
+    for i,j in enumerate(content):
+        print (i,j)
     print("The files has been listed successfully") 
     socket_client.send("The files has been listed!:".encode())
 
@@ -201,12 +206,10 @@ def downloadFiles(nameBucket,nameFile,socket_client):
     try:
         socket_client.send(chr(1))
        
-
     except TypeError:
     
         socket_client.send(bytes(chr(1), "utf-8"))                
             
-        
     f.close()
     
 
