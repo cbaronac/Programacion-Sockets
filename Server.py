@@ -35,7 +35,7 @@ def threaded(socket_client):
         if (bucket_name[0]=="1"):
             name=bucket_name[1]
             createBucket(name,socket_client)
-
+        
         elif (bucket_name[0]=="2"):
             name=bucket_name[1]
             if not os.path.isdir('./Buckets/'+name):
@@ -63,7 +63,10 @@ def threaded(socket_client):
 
         elif(bucket_name[0]=="5"):
             bucketName=bucket_name[1]
-            listFiles(socket_client,bucketName)
+            if not os.path.isdir('./Buckets/'+bucketName):
+                socket_client.send("The bucket doesn't exists!".encode())
+            else:
+                listFiles(socket_client,bucketName)
 
         elif(bucket_name[0]=="6"):
             nameBucket=bucket_name[1]
@@ -78,11 +81,15 @@ def threaded(socket_client):
             nameFile=bucket_name[2]
             dir="./Downloads/"+nameFile
             f = Path(dir)
+            dirOrigin="./Buckets/"+nameBucket+"/"+nameFile
+            fOrigin = Path(dirOrigin)
             if(f.exists()):
                 print("The file alredy exists!")
+            elif not (fOrigin.exists()):
+                print("The file doesn't exists!")
             else:
                 downloadFiles(nameBucket,nameFile,socket_client)
-        
+
     
     # connection closed 
     socket_client.send(data) 
@@ -115,11 +122,12 @@ def createBucket(nameBucket,socket_client):
 
     try:
         os.mkdir(dir)
+        print("The directory has been created successfully.")
+        socket_client.send("The bucket has been created successfully!".encode())
     except OSError:
         print("The name of this directory isn't available")
-    else:
-        print("The directory has been created successfully.")
-    socket_client.send("The bucket has been created!".encode())
+        socket_client.send("The bucket alredy exists!".encode())
+
 
 def deleteBucket(nameBucket,socket_client):
     dir="./Buckets/"+nameBucket
@@ -190,28 +198,29 @@ def deleteFiles(socket_client,dir):
 def downloadFiles(nameBucket,nameFile,socket_client):
     dir="./Buckets/"+nameBucket+"/"+nameFile
     sizefile = os.path.getsize(dir)
-
+    
     while True:
-        
+            
         f = open(dir,"rb")
         content = f.read(sizefile)
-        
+            
         while content:
             # Send content
             socket_client.send(content)
             content = f.read(sizefile)
+            print("The file has been sent succesfully!")
             socket_client.send("The file has been sent successfully!".encode())
         break
 
     try:
         socket_client.send(chr(1))
-       
+        
     except TypeError:
-    
+        
         socket_client.send(bytes(chr(1), "utf-8"))                
-            
+                
     f.close()
-    
+        
 
 
 if __name__ == "__main__":

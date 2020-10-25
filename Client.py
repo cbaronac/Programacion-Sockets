@@ -99,7 +99,6 @@ def upload(command_to_send, socket_client):
     while(command_name=="" or command_name==" " ):
         print("Input a correct name file: ")
         command_name=input()
-    
     print('Input the path where is the file:')
     path=input()
     while(path=="" or path==" "):
@@ -148,7 +147,7 @@ def listFiles(command_to_send, socket_client):
 def deleteFiles(command_to_send,socket_client):
     print('Input the bucket name where is the file that you want to delete: ')
     bucket_name=input()
-    while(bucket_name=="" or bucket_name==" "):
+    while(bucket_name=="" or bucket_name==" " or not os.path.isdir('./Buckets/'+bucket_name)):
         print("Input a correct bucket name: ")
         bucket_name=input()
     print('Input the file name that you want to delete: ')
@@ -163,7 +162,7 @@ def deleteFiles(command_to_send,socket_client):
 def downloadFiles(command_to_send,socket_client):
     print('Input the bucket name where is the file that you want to download: ')
     command_bucket_name=input()
-    while(command_bucket_name=="" or command_bucket_name==" "):
+    while(command_bucket_name=="" or command_bucket_name==" " or not os.path.isdir('./Buckets/'+command_bucket_name)):
         print("Input a correct bucket name: ")
         command_bucket_name=input()
     print('Input the file name that you want to download: ')
@@ -175,48 +174,51 @@ def downloadFiles(command_to_send,socket_client):
     socket_client.send(bytes(command_complete,'utf-8'))
     dir="./Downloads/"+command_file_name
     f = Path(dir)
+    dirOrigin="./Buckets/"+command_bucket_name+"/"+command_file_name
+    fOrigin = Path(dirOrigin)
     if(f.exists()):
         print("The file alredy exists!")
+    elif not (fOrigin.exists()):
+        print("The file doesn't exists!")
     else:
-        downloadIfNotExists(command_bucket_name,command_file_name,socket_client)
+        downloadIfNotExists(command_bucket_name,command_file_name,socket_client,dirOrigin)
 
-def downloadIfNotExists(command_bucket_name,command_file_name, socket_client):
+def downloadIfNotExists(command_bucket_name,command_file_name, socket_client,dirOrigin):
     dire="./Downloads/"+command_file_name
     file= open(dire,"wb")
-    dir="./Buckets/"+command_bucket_name+"/"+command_file_name
-    sizefile = os.path.getsize(dir)
+    sizefile = os.path.getsize(dirOrigin)
     while True:
         try:
-            # Recibir datos del cliente.
+             # Recibir datos del cliente.
             input_data = socket_client.recv(sizefile)
             if input_data:
-                # Compatibilidad con Python 3.
+                 # Compatibilidad con Python 3.
                 if isinstance(input_data, bytes):
                     end = input_data[0] == 1
-                    
+                        
                 else:
                     end = input_data == chr(1)
-                   
+                    
                 if not end:
                     if os.path.isdir(dire):
                         print("The file exists!")
                     else:
                         file.write(input_data)
                         print("The file has been received successfully.")
-                        confirmationServer()                
+                        confirmationServer(socket_client)                
             break
-
         except:
-           
             file.close()
             break
 
     file.close() 
 
 
+
 def confirmationServer(socket_client):
     dataFromServer = socket_client.recv(1024)
-    print(dataFromServer)
+    string_received=dataFromServer.decode("utf-8")
+    print(string_received)
 
 
 if __name__ == "__main__":
