@@ -133,12 +133,11 @@ def deleteBucket(nameBucket,socket_client):
     dir="./Buckets/"+nameBucket
     try:
         shutil.rmtree(dir) #Borrado en cascada archivos -> Carpeta
+        print("The directory has been deleted successfully.")
+        socket_client.send("The bucket has been deleted!".encode())
     except OSError:
         print("The name of this directory isn't available")
         socket_client.send("The bucket doesn't exists!".encode())
-    else:
-        print("The directory has been deleted successfully.")
-        socket_client.send("The bucket has been deleted!".encode())
 
 def listBuckets(socket_client):
     dir="./Buckets"
