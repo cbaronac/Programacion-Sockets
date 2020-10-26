@@ -1,7 +1,6 @@
 # Code by:
 # Camila Barona and Camila Mejia
 
-#Socket -> Endpoint that receives data, with this one you receive data is not the communication it's the end point that recieves the communicaction on that endpoint sits at an IP and a port
 import socket
 import os
 import shutil
