@@ -1,3 +1,6 @@
+# Code by:
+# Camila Barona and Camila Mejia
+
 import socket
 from pathlib import Path
 import os
