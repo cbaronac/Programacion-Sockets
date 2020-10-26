@@ -59,7 +59,7 @@ def initialMenu(socket_client):
             command_to_send=input()
             menuOptions(command_to_send,socket_client)
             ans = input('\nDo you want to continue(y/n) :') 
-        
+            
         break
     print("The client has been finished")
     socket_client.close()   
