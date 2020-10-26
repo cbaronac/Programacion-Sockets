@@ -2,7 +2,6 @@
 import socket
 import os
 import shutil
-import pathlib
 from os import remove
 from pathlib import Path
 from _thread import *
@@ -12,47 +11,52 @@ print_lock = threading.Lock()
   
 
 def main():
+    ''' 
+        Main method of the application 
+    '''
     connectionSocket()
 
 def threaded(socket_client):
+    ''' 
+        This method is responsible for implementing the operation of threads in order to allow connecting several clients to the server 
+        also receives the command sent by the client and calls the corresponding method depending on the function that the client wants to do
+    '''
+
     while True: 
         # data received from client 
         data = socket_client.recv(1024) 
         if not data: 
-            print("The server has been finished")  
+            print("The server has been finished") 
             # lock released on exit 
             print_lock.release() 
             break
-        # reverse the given string from client 
-    
-  
-        # send back reversed string to client 
-        
-        string_received=data.decode("latin-1")
-        bucket_name=string_received.split(" ")
         
 
-        if (bucket_name[0]=="1"):
-            name=bucket_name[1]
-            createBucket(name,socket_client)
+        string_received=data.decode("latin-1")
+        command_from_client=string_received.split(" ")
         
-        elif (bucket_name[0]=="2"):
-            name=bucket_name[1]
-            if not os.path.isdir('./Buckets/'+name):
+
+        if (command_from_client[0]=="1"):
+            bucket_name=command_from_client[1]
+            createBucket(bucket_name,socket_client)
+        
+        elif (command_from_client[0]=="2"):
+            bucket_name=command_from_client[1]
+            if not os.path.isdir('./Buckets/'+bucket_name):
                 socket_client.send("The bucket doesn't exists!".encode())
             else:
-                deleteBucket(name,socket_client)
+                deleteBucket(bucket_name,socket_client)
             
-        elif(bucket_name[0]=="3"):             
+        elif(command_from_client[0]=="3"):             
             listBuckets(socket_client)
 
-        elif(bucket_name[0]=="4"):
-            name=bucket_name[1] #Name of bucket
-            nameF=bucket_name[2] #File
-            path=bucket_name[3]
-            dir="./Buckets/"+name+"/"+nameF   
+        elif(command_from_client[0]=="4"):
+            bucket_name=command_from_client[1] 
+            file_name=command_from_client[2] 
+            path=command_from_client[3]
+            dir="./Buckets/"+bucket_name+"/"+file_name   
             f = Path(dir)
-            origin=path+"/"+nameF
+            origin=path+"/"+file_name
             if(f.exists()):
                     print("The file alredy exists!")
                     socket_client.send("The file alredy exists!".encode())
@@ -61,51 +65,58 @@ def threaded(socket_client):
                 f= open(dir,"wb")
                 uploadFiles(socket_client,f,sizefile)
 
-        elif(bucket_name[0]=="5"):
-            bucketName=bucket_name[1]
-            if not os.path.isdir('./Buckets/'+bucketName):
+        elif(command_from_client[0]=="5"):
+            bucket_name=command_from_client[1]
+            if not os.path.isdir('./Buckets/'+bucket_name):
                 socket_client.send("The bucket doesn't exists!".encode())
             else:
-                listFiles(socket_client,bucketName)
+                listFiles(socket_client,bucket_name)
 
-        elif(bucket_name[0]=="6"):
-            nameBucket=bucket_name[1]
-            nameF=bucket_name[2]
-            dir="./Buckets/"+nameBucket+"/"+nameF
+        elif(command_from_client[0]=="6"):
+            bucket_name=command_from_client[1]
+            file_name=command_from_client[2]
+            dir="./Buckets/"+bucket_name+"/"+file_name
             deleteFiles(socket_client,dir)
 
-        elif (bucket_name[0]=="7"):
+        elif (command_from_client[0]=="7"):
             if not os.path.isdir('./Downloads'):
                 os.mkdir("./Downloads")
-            nameBucket=bucket_name[1]
-            nameFile=bucket_name[2]
-            dir="./Downloads/"+nameFile
+            bucket_name=command_from_client[1]
+            file_name=command_from_client[2]
+            dir="./Downloads/"+file_name
             f = Path(dir)
-            dirOrigin="./Buckets/"+nameBucket+"/"+nameFile
+            dirOrigin="./Buckets/"+bucket_name+"/"+file_name
             fOrigin = Path(dirOrigin)
             if(f.exists()):
                 print("The file alredy exists!")
             elif not (fOrigin.exists()):
                 print("The file doesn't exists!")
             else:
-                downloadFiles(nameBucket,nameFile,socket_client)
+                downloadFiles(bucket_name,file_name,socket_client)
 
     
     # connection closed 
-    socket_client.send(data) 
+    socket_client.send(data)
+    
     
   
 def connectionSocket():
+    '''
+        This method establish the connection of the client with Sockets 
+    '''
+
     #Creating a Socket
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM ) #Socket family type (AF_INET: IPV4), actual type of socket (SOCK_STREAM: TCP)
     print("Socket created...")
 
     socket_client=socket.socket()
 
-    socket_server.bind((socket.gethostname(),1233))  #Enlazar la tupla IP y Puertos
+    socket_server.bind((socket.gethostname(),1233)) #Bind the IP tuple and Ports
 
-    socket_server.listen(1)  #Preparing the server for incoming connections and this server will prepare and leave a queue of 5 so it's under some sort
+    socket_server.listen(5) 
     print("Listening...")
+    #it specifies the number of unaccepted connections that the system will allow before refusing new connections. 
+    # If not specified, a default reasonable value is chosen.
    
     #Accepting a client
     while True:
@@ -114,11 +125,21 @@ def connectionSocket():
         print('Connected to :', address[0], ':', address[1])
         start_new_thread(threaded, (socket_client,)) 
     
-def createBucket(nameBucket,socket_client):
+def createBucket(bucket_name,socket_client):
+    ''' 
+        This method create a Bucket, for this is necesary input a bucket name
+
+        The main binder where the buckets will be stored will be created in the path where the application is run
+
+        If the bucket is created successfully, the client will be notified with a message sent from the server
+
+        The buckets are created using os library
+    '''
+
     if not os.path.isdir('./Buckets'):
         os.mkdir("./Buckets")
 
-    dir="./Buckets/"+nameBucket
+    dir="./Buckets/"+bucket_name
 
     try:
         os.mkdir(dir)
@@ -129,10 +150,20 @@ def createBucket(nameBucket,socket_client):
         socket_client.send("The bucket alredy exists!".encode())
 
 
-def deleteBucket(nameBucket,socket_client):
-    dir="./Buckets/"+nameBucket
+def deleteBucket(bucket_name,socket_client):
+    ''' 
+        This method delete a Bucket, for this is necesary input a bucket name
+
+        The main binder where the buckets will be stored will be created in the path where the application is run
+
+        If the bucket is deleted successfully, the client will be notified with a message sent from the server
+
+        The buckets are deleted using shutil library
+    '''
+
+    dir="./Buckets/"+bucket_name
     try:
-        shutil.rmtree(dir) #Borrado en cascada archivos -> Carpeta
+        shutil.rmtree(dir) #Cascading Delete Files -> Folder
         print("The directory has been deleted successfully.")
         socket_client.send("The bucket has been deleted!".encode())
     except OSError:
@@ -140,27 +171,43 @@ def deleteBucket(nameBucket,socket_client):
         socket_client.send("The bucket doesn't exists!".encode())
 
 def listBuckets(socket_client):
+    ''' 
+        This method lists the Buckets
+
+        If the buckets are listed successfully, the client will be notified with a message sent from the server
+
+        The buckets are listed using os library
+    '''
+
     dir="./Buckets"
+    list_buckets=""
     content = os.listdir(dir)
     for i,j in enumerate(content):
+        list_buckets= list_buckets + str(i+1) +"->"+str(j) + "\n"
         print (i,j)
-    print("The buckets has been listed on server successfully.") 
-    socket_client.send("The buckets has been listed!:".encode())
+    socket_client.send(list_buckets.encode())
+    print("The buckets has been listed on server successfully.")     
 
 def uploadFiles(socket_client,file,sizefile):
-    
+    ''' 
+        This method allows uploading a file stored in server's bucket in a client's binder call downloads
+        
+        The function of this method is write in a bucket a file stored in specific path, for that we need to recieved the size of the file in bytes
+
+        If the file is uploading correctly, the client will be notified with a message sent from the server
+    '''
     while True:
         try:
-            # Recibir datos del cliente.
+            
             input_data = socket_client.recv(sizefile)
             if input_data:
-                # Compatibilidad con Python 3.
-                if isinstance(input_data, bytes):  #Verifica que input_data sean bytes
-                    
+                
+                if isinstance(input_data, bytes):  #Verify that input_data are bytes
+
                     end = input_data[0] == 1
-                        
+
                 else:
-                    end = input_data == chr(1)  #The chr() function returns the character that represents the specified unicode
+                    end = input_data == chr(1)  #End checks if it is in the header or end of the file if it is false stop writing
 
                 if not end:
                     file.write(input_data)
@@ -177,14 +224,31 @@ def uploadFiles(socket_client,file,sizefile):
     file.close() 
 
 def listFiles(socket_client,nameBucket):
+
+    ''' 
+        This method lists the files that are stored in a specific bucket, for this is necesary input the bucket name
+
+        The bucket's files are listed using os library
+    '''
+
     dir="./Buckets/"+nameBucket
+    list_files=""
     content = os.listdir(dir)
     for i,j in enumerate(content):
+        list_files= list_files + str(i+1) +"->"+str(j) + "\n"
         print (i,j)
     print("The files has been listed successfully") 
-    socket_client.send("The files has been listed!:".encode())
+    socket_client.send(list_files.encode())
+
 
 def deleteFiles(socket_client,dir):
+
+    ''' 
+        This method delete a file stores in a Bucket
+
+        If bucket's file is deleted successfully, the client will be notified with a message sent from the server
+    '''
+
     f = Path(dir)
     if not (f.exists()):
         print("The file doesn't exists!")
@@ -194,8 +258,17 @@ def deleteFiles(socket_client,dir):
         print("The file has been deleted successfully.") 
         socket_client.send("The file has been deleted from bucket".encode())
 
-def downloadFiles(nameBucket,nameFile,socket_client):
-    dir="./Buckets/"+nameBucket+"/"+nameFile
+def downloadFiles(bucket_name,file_name,socket_client):
+    
+    ''' 
+        This method allows downloading a file saved stored in server's bucket in a client's binder call downloads 
+
+        The function of this method is read a file stored in a bucket, for that we need to send the size of the file in bytes
+
+        If the file is downloading correctly, the client will be notified with a message sent from the server
+    '''
+
+    dir="./Buckets/"+bucket_name+"/"+file_name
     sizefile = os.path.getsize(dir)
     
     while True:
